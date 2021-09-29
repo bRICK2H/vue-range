@@ -2,12 +2,19 @@
 	<!-- wrapper -->
 	<div class="wrapper">
 
+		min: {{ cmin }}, max: {{ cmax }}
+		<br /> <br />
+
 		<!-- plugin -->
 		<div class="v-range-container" :ref="refRange" :style="{ width: `${width}px` }">
+			<span class="v-range-interval" :style="{ left: `${coords.lx + 2}px`, right: `${coords.rx + 2}px` }"></span>
+
 			<span class="v-range-item v-range-item--left" :style="{ left: `${coords.lx}px` }"
 				@mousedown="grab($event, 'left')"></span>
-			<span class="v-range-item v-range-item--right" :style="{ right: `${coords.rx}px` }"
-				@mousedown="grab($event, 'right')"></span>
+			<span class="v-range-item v-range-item--right"
+				:style="{ right: `${coords.rx}px` }"
+				@mousedown="grab($event, 'right')"
+			></span>
 		</div>
 
 	</div>
@@ -17,6 +24,14 @@
 	export default {
 		name: 'VRange',
 		props: {
+			min: {
+				type: Number,
+				default: 0
+			},
+			max: {
+				type: Number,
+				default: 500
+			},
 			width: {
 				type: Number,
 				default: 150
@@ -37,6 +52,8 @@
 			},
 			grabX: 0,
 			currGrab: '',
+			cmin: 0,
+			cmax: 0,
 		}),
 		methods: {
 			grab(e, elem) {
@@ -50,11 +67,11 @@
 		},
 		created() {
 			this.refRange = this.generateRef('v-range')
-
-				document.addEventListener('mousemove', e => {
+			
+			document.addEventListener('mousemove', e => {
 				const offsetGrabX = this.sizeCircle - this.grabX
 				const maxLeft = this.maxRange - this.sizeCircle - offsetGrabX - this.coords.rx
-				const minRight = this.minRange + this.sizeCircle + offsetGrabX + this.coords.lx
+				const minRight = this.minRange + this.coords.lx + this.grabX + this.sizeCircle
 
 				const { x } = e
 
@@ -63,10 +80,13 @@
 					if (this.currGrab === 'left') {
 						if (x - this.grabX >= this.minRange && x <= maxLeft) {
 							this.coords.lx = x - this.minRange - this.grabX
+							this.cmin = Math.round(this.coords.lx * this.max / (this.width - this.sizeCircle * 2))
 						}
 					} else {
-						if (x >= minRight && x + this.grabX <= this.maxRange) {
+						if (x >= minRight && x + offsetGrabX <= this.maxRange) {
 							this.coords.rx = this.maxRange - x - offsetGrabX
+							this.cmax = Math.round(this.max - (this.coords.rx * this.max / (this.width - this.sizeCircle)))
+							this.cmax = this.max - Math.round(this.coords.rx * this.max / (this.width - this.sizeCircle * 2))
 						}
 					}
 
@@ -110,7 +130,6 @@
 		width: 16px;
 		height: 16px;
 		background: #000;
-		// border: 1px solid #000;
 		border-radius: 50%;
 		position: absolute;
 		top: 50%;
@@ -124,5 +143,11 @@
 		&--right {
 			right: 0;
 		}
+	}
+
+	.v-range-interval {
+		height: inherit;
+		background: #000;
+		position: absolute;
 	}
 </style>
